@@ -1,0 +1,65 @@
+#!/bin/bash
+
+# Découpage d'un album entier grâce à un fichier descriptif
+
+function printhelp () {
+	echo -e "\t\tAudio Splitter:"
+	echo -e "Utilitaire permettant de découper un fichier audio en plusieurs pistes"
+	echo -e "Usage: $(basename ${0}) [options] <fichier audio> <fichier descriptif>"
+	echo -e "OPTIONS:"
+	echo -e "-d\tdestructive: Supprimer le fichier audio originel et le fichier descriptif à la fin du traitement"
+	echo -e "-h\tAffiche cette aide et quitte le programme."
+	echo -e "NOTES:"
+	echo -e "\t- A moins que l'option -d soit appelée, les fichiers audio et descriptif seront conservés."
+	echo -e "\t- Le seul format audio supporté actuellement est l'encodage mp3"
+	echo -e "\t- Le fichier descriptif doit être obligatoirement de la forme suivante:\n\t(Numéro de piste)|(titre)|(position de début)|(position de fin). Ex: 01|Titre piste1|00:00|05:45"
+	exit $RET
+}
+
+RET=0
+
+# contrôle des options
+while getopts ":dh" option ; do
+	case "$option" in
+		d ) destr="true" ;;
+		h ) RET=0 ; printhelp ;;
+		\? ) echo -e "Option inconnue: $option \n" ; RET=2 ; printhelp ;;
+	esac
+done
+shift $((OPTIND -1))
+
+# contrôle d'arguments
+if [ $# -ne 2 ] ; then	echo -e "Erreur: arguments manquants.\n" ; RET=1 ; printhelp ; fi
+
+audio="$1"
+desc="$2"
+ext="mp3"
+
+# contrôle fichier audio
+file "$audio" | grep -i -q mpeg 2>&1 > /dev/null
+if [ $?	-ne 0 ] ; then echo -e "Erreur: le fichier $audio ne semble pas être un fichier audio encodé en mp3.\n" ; RET=1 ; printhelp ; fi
+
+# pré-contrôle fichier desc
+file "$desc" | grep -i -q text 2>&1 > /dev/null
+if [ $? -ne 0 ] ; then echo -e "Erreur: le fichier $desc ne semble pas être un fichier texte.\n" ; RET=1 ; printhelp ; fi
+nb_lines=$(wc -l < $desc)
+
+# traitement 
+# TODO : ajouter contrôle de validité des lignes dans la boucle
+for (( i=1; i <= $nb_lines; i++ ))
+do
+	tracknum="$(sed -n "${i}p" $desc | awk -F"|" '{print $1}')"
+        if [ ${#tracknum} -eq 1 ] ; then		# ajout d'un zéro
+                sed -i "${i}s/^/0/" $desc		# au début de la ligne
+        fi						# si tracknum = {1..9}
+	tracknum="$(sed -n "${i}p" $desc | awk -F"|" '{print $1}')"
+	title="$(sed -n "${i}p" $desc | awk -F"|" '{print $2}')"
+	startpos="$(sed -n "${i}p" $desc | awk -F"|" '{print $3}')"
+	stoppos="$(sed -n "${i}p" $desc | awk -F"|" '{print $4}')"
+	ffmpeg -i $audio -ss $startpos -to $stoppos -acodec copy 'track.mp3'
+	mv track.mp3 "${tracknum}-${title}.${ext}"
+done
+
+[ $destr ] && rm $audio $desc
+
+exit $RET
