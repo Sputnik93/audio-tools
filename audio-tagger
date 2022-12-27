@@ -62,9 +62,6 @@ if [ "$(grep -i -c 'album' "$fichier")" -lt 1 ] ; then RET=2 ; echo -e "\nErreur
 if [ "$(grep -iE -c 'artiste?' "$fichier")" -lt 1 ] ; then echo -e "\nErreur: le fichier $fichier ne contient pas de ligne avec le nom de l'artiste.\n" ; printhelp ; fi
 if [ "$(grep -iE -c 'trackliste?' "$fichier")" -lt 1 ] ; then RET=2 ; echo -e "\nErreur: le fichier $fichier ne contient pas de ligne 'tracklist'\n" ; printhelp ; fi
 
-# sauvegarde du fichier original s'il n'y a pas de sauvegarde
-if [ ! -e "copie-$fichier" ] ; then cp "$fichier" "copie-$fichier" ; fi 
-
 # on commence par supprimer tous les espaces de fin de ligne du fichier
 sed -E -i 's/\s+$//' "$fichier"
 
@@ -90,8 +87,7 @@ sed -n "${debut},${fin}p" "$fichier" > "$fichier.tracklist"
 tracklist="$fichier.tracklist"
 
 # vérifier le pattern des lignes de la tracklist
-# shellcheck disable=SC2046
-if [ $(grep -E -c "^[0-9]+\s?[_-:\\\/]?\s?[${auth}]+" "$tracklist") -eq 0 ] ; then
+if [ "$(grep -E -c "^[0-9]+\s?[_\-\:\\\/]?\s?[${auth}]+" "$tracklist")" -eq 0 ] ; then
 	RET=2
 	echo -e "\nErreur: la tracklist n'est pas au format attendu. Fin de l'exécution\n"
 	rm "$tracklist"
