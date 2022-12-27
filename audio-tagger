@@ -94,15 +94,15 @@ if [ "$(grep -E -c "^[0-9]+\s?[_\-\:\\\/]?\s?[${auth}]+" "$tracklist")" -eq 0 ] 
 	printhelp
 fi
 
-# ajout des 0 devant les chiffres de 1 à 9 seuls
-i=1
-while read -r line ; do
-	num=$(echo "$line" | grep -Eo "^[[:digit:]]{1,2}")
-        if [ ${#num} -eq 1 ] ; then
-                sed "${i}s/^/0/" "$tracklist" >> "$tracklist.new"
-        fi
-        ((i++))
-done < "$tracklist"
+## ajout des 0 devant les chiffres de 1 à 9 seuls
+#i=1
+#while read -r line ; do
+#	num=$(echo "$line" | grep -Eo "^[[:digit:]]{1,2}")
+#        if [ ${#num} -eq 1 ] ; then
+#                sed "${i}s/^/0/" "$tracklist" >> "$tracklist.new"
+#        fi
+#        ((i++))
+#done < "$tracklist"
 
 
 # Récupération des tags individuels
@@ -130,7 +130,7 @@ while read -r ligne ; do
 		#file=$(ls "$dir/${t_num}*")
 		id3v2 -a "$t_artiste" -A "$t_album" -t "$t_track" -T "$t_num" -g "${t_genre-Inconnu}" -y "${t_annee-2017}" "$file" || echo "Erreur sur la track $i"
 	fi
-done < "$tracklist.new"
+done < "$tracklist"
 
 if [ $destr == "true" ] ; then 
 	find "$dir" -type f -iregex -o iregex "^.*track.*$" -delete
