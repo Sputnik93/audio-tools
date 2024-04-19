@@ -94,16 +94,18 @@ if [ "$(grep -E -c "^[0-9]+\s?[_\-\:\\\/]?\s?[${auth}]+" "$tracklist")" -eq 0 ] 
 	printhelp
 fi
 
-## ajout des 0 devant les chiffres de 1 à 9 seuls
-#i=1
-#while read -r line ; do
-#	num=$(echo "$line" | grep -Eo "^[[:digit:]]{1,2}")
-#        if [ ${#num} -eq 1 ] ; then
-#                sed "${i}s/^/0/" "$tracklist" >> "$tracklist.new"
-#        fi
-#        ((i++))
-#done < "$tracklist"
-
+# ajout des 0 devant les chiffres de 1 à 9 seuls
+output="$tracklist.new"
+echo -n "" | tee "$output"
+while read -r line ; do
+	num=$(echo "$line" | grep -Eo "^[[:digit:]]{1,2}")
+        if [ ${#num} -eq 1 ] ; then
+                echo "$line" | sed 's/^/0/'  | tee -a "$output"
+	else
+		echo "$line" | tee -a "$output"
+        fi
+done < "$tracklist"
+cp "$output" "$tracklist"
 
 # Récupération des tags individuels
 i=0
